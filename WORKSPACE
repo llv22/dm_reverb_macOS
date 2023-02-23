@@ -6,10 +6,13 @@ workspace(name = "reverb")
 #  2. Calculate the sha256 of the binary:
 #     PROTOC_VERSION="3.11.4"
 #     curl -L "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip" | sha256sum
+
+#     PROTOC_VERSION="3.9.0"
+#     curl -L "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-osx-x86_64.zip" | sha256sum
 #  3. Update the two variables below.
 #
 PROTOC_VERSION = "3.9.0"
-PROTOC_SHA256 = "15e395b648a1a6dda8fd66868824a396e9d3e89bc2c8648e3b9ab9801bea5d55"
+PROTOC_SHA256 = "99729771ccb2f70621ac20f241f6ab1c70271f2c6bd2ea1ddbd9c2f7ae08d316"
 
 load(
     "//reverb/cc/platform/default:repo.bzl",

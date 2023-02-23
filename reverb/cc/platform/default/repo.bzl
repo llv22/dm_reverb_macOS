@@ -89,7 +89,7 @@ def _find_python_solib_path(repo_ctx):
         fail("Could not locate python shared library path:\n{}"
             .format(exec_result.stderr))
     version = exec_result.stdout.splitlines()[-1]
-    basename = "lib{}.so".format(version)
+    basename = "lib{}.dylib".format(version)
     exec_result = repo_ctx.execute(
         ["{}-config".format(version), "--configdir"],
         quiet = True,
@@ -225,7 +225,8 @@ def _tensorflow_solib_repo_impl(repo_ctx):
         content = """
 cc_library(
     name = "framework_lib",
-    srcs = ["tensorflow_solib/libtensorflow_framework.so.2"],
+    # srcs = ["tensorflow_solib/libtensorflow_framework.so.2"],
+    srcs = ["tensorflow_solib/libtensorflow_framework.2.dylib"],
     deps = ["@python_includes", "@python_includes//:numpy_includes"],
     visibility = ["//visibility:public"],
 )
@@ -363,7 +364,8 @@ def _protoc_archive(ctx):
     sha256 = ctx.attr.sha256
 
     urls = [
-        "https://github.com/protocolbuffers/protobuf/releases/download/v%s/protoc-%s-linux-x86_64.zip" % (version, version),
+        "https://github.com/protocolbuffers/protobuf/releases/download/v%s/protoc-%s-osx-x86_64.zip" % (version, version),
+        # "https://github.com/protocolbuffers/protobuf/releases/download/v%s/protoc-%s-linux-x86_64.zip" % (version, version),
     ]
     ctx.download_and_extract(
         url = urls,

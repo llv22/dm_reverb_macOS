@@ -98,7 +98,8 @@ for python_version in $PYTHON_VERSIONS; do
     export PYTHON_BIN_PATH=/usr/bin/python3.7 && export PYTHON_LIB_PATH=/usr/local/lib/python3.7/dist-packages
     ABI=cp37
   elif [ "$python_version" = "3.8" ]; then
-    export PYTHON_BIN_PATH=/usr/bin/python3.8 && export PYTHON_LIB_PATH=/usr/local/lib/python3.8/dist-packages
+    # export PYTHON_BIN_PATH=/usr/bin/python3.8 && export PYTHON_LIB_PATH=/usr/local/lib/python3.8/dist-packages
+    export PYTHON_BIN_PATH=/Users/llv23/opt/miniconda3/bin/python3.8 && export PYTHON_LIB_PATH=/Users/llv23/opt/miniconda3/lib/python3.8/site-packages
     ABI=cp38
   elif [ "$python_version" = "3.9" ]; then
     export PYTHON_BIN_PATH=/usr/bin/python3.9 && export PYTHON_LIB_PATH=/usr/local/lib/python3.9/dist-packages
@@ -138,7 +139,7 @@ for python_version in $PYTHON_VERSIONS; do
     echo "Run Python tests..."
     set +e
 
-    bash run_python_tests.sh |& tee ./unittest_log.txt
+    bash run_python_tests.sh & tee ./unittest_log.txt
     UNIT_TEST_ERROR_CODE=$?
     set -e
     if [[ $UNIT_TEST_ERROR_CODE != 0 ]]; then

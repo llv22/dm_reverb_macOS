@@ -311,7 +311,7 @@ def reverb_gen_op_wrapper_py(name, out, kernel_lib, linkopts = [], **kwargs):
         ],
         linkshared = 1,
         linkopts = linkopts + _rpath_linkopts(module_name) + [
-            "-Wl,--version-script",
+            # "-Wl,--version-script",
             "$(location %s)" % version_script_file,
         ],
         **kwargs
@@ -453,7 +453,7 @@ def reverb_pybind_extension(
             "-fvisibility=hidden",  # avoid pybind symbol clashes between DSOs.
         ],
         linkopts = linkopts + _rpath_linkopts(module_name) + [
-            "-Wl,--version-script",
+            # "-Wl,--version-script",
             "$(location %s)" % version_script_file,
         ],
         deps = depset(deps + [
