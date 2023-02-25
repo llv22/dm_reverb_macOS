@@ -7,9 +7,10 @@ This repository is forked by Orlando, Ding in order to make dm_verb available on
 
 Several key implementations to fix the issues on macOS 10.13.6:
 
+* remove unnecessary apple_common.objc_proto_aspect in "/private/var/tmp/_bazel_llv23/0d2f910c738b958840a7c3ed78462485/external/build_bazel_rules_apple/apple/internal/rule_factory.bzl"
 * python3.8 environment preparation to avoid entangling with the system default python (3.7 in framework)
 * [reverb/cc/platform/default/build_rules.bzl](reverb/cc/platform/default/build_rules.bzl), remove the reliance with libpython3.8.dylib that will lead to circular dependency during runtime and the ensuring core dump
-* correct the dynamic link between libraries. Regarding manual solution via install_name_tool, refer to [macOS_reverb_symbol.sh](macOS_reverb_symbol.sh)
+* correct the dynamic link between libraries. Regarding manual solution via install_name_tool, refer to [macOS_reverb_symbol.sh](macOS_reverb_symbol.sh) and [change explicit path to @executable_path](https://itwenty.me/2020/07/understanding-dyld-executable_path-loader_path-and-rpath/)
 
 The building process as follow:
 
