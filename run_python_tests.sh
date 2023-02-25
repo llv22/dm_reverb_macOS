@@ -20,7 +20,7 @@
 # python to use.
 
 # Usage (expects Reverb to be installed):
-#   export PYTHON_BIN_PATH=$(which python3)
+#   export PYTHON_BIN_PATH=$(which python3.8)
 #   bash run_python_tests.sh
 set +x
 

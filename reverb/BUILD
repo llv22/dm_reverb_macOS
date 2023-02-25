@@ -96,7 +96,7 @@ reverb_pybind_extension(
     srcs = ["pybind.cc"],
     module_name = "libpybind",
     pytype_srcs = ["pybind.pyi"],
-    srcs_version = "PY3ONLY",
+    srcs_version = "PY2AND3",
     visibility = [":__subpackages__"],
     deps = [
         "//reverb/cc:chunker",

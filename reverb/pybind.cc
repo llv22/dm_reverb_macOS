@@ -482,7 +482,7 @@ PYBIND11_MODULE(libpybind, m) {
       .def("Reset", &Client::Reset, py::call_guard<py::gil_scoped_release>())
       .def("ServerInfo",
            [](Client *client, int timeout_sec) {
-             // Wait indefinetely for server to startup when timeout not
+             // Wait indefinitely for server to startup when timeout not
              // provided.
              auto timeout = timeout_sec > 0 ? absl::Seconds(timeout_sec)
                                             : absl::InfiniteDuration();

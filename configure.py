@@ -29,11 +29,11 @@
 """Configure script to get build parameters from user.
 
 This should be run before building reverb with Bazel. The easiest usage is
-`python3 configure.py`. It will use the version of python to suggest the correct
+`python3.8 configure.py`. It will use the version of python to suggest the correct
 paths to set for the bazel config.
 
 Shamelessly taken from TensorFlow:
-  htps://github.com/tensorflow/tensorflow/blob/master/configure.py
+  https://github.com/tensorflow/tensorflow/blob/master/configure.py
 """
 import argparse
 import os
@@ -149,7 +149,7 @@ def setup_python(environ_cp):
   write_to_bazelrc('build --repo_env=PYTHON_BIN_PATH=\"%s"' % python_bin_path)
   environ_cp['PYTHON_BIN_PATH'] = python_bin_path
 
-  # If choosen python_lib_path is from a path specified in the PYTHONPATH
+  # If chosen python_lib_path is from a path specified in the PYTHONPATH
   # variable, need to tell bazel to include PYTHONPATH
   if environ_cp.get('PYTHONPATH'):
     python_paths = environ_cp.get('PYTHONPATH').split(':')

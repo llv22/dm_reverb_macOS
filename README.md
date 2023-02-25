@@ -1,4 +1,33 @@
-# Reverb
+<!-- markdownlint-disable-file MD029 MD030 MD036 MD012 MD040 MD004 -->
+# Reverb on macOS 10.13.6
+
+## The purpose of this repository
+
+This repository is forked by Orlando, Ding in order to make dm_verb available on macOS 10.13.6.
+
+Several key implementations to fix the issues on macOS 10.13.6:
+
+* python3.8 environment preparation to avoid entangling with the system default python (3.7 in framework)
+* [reverb/cc/platform/default/build_rules.bzl](reverb/cc/platform/default/build_rules.bzl), remove the reliance with libpython3.8.dylib that will lead to circular dependency during runtime and the ensuring core dump
+* correct the dynamic link between libraries. Regarding manual solution via install_name_tool, refer to [macOS_reverb_symbol.sh](macOS_reverb_symbol.sh)
+
+The building process as follow:
+
+1. Compilation
+
+```bash
+python3.8 configure.py
+bazel build -c opt //reverb/pip_package:build_pip_package
+```
+
+2. build and install whl
+
+```bash
+./bazel-bin/reverb/pip_package/build_pip_package --dst /tmp/reverb_build/dist/
+```
+
+## General description
+
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/dm-reverb)
 [![PyPI version](https://badge.fury.io/py/dm-reverb.svg)](https://badge.fury.io/py/dm-reverb)
 
@@ -10,15 +39,23 @@ LIFO, and priority queues.
 
 ## Table of Contents
 
--   [Installation](#installation)
--   [Quick Start](#quick-start)
--   [Detailed Overview](#detailed-overview)
-    -   [Tables](#tables)
-    -   [Item Selection Strategies](#item-selection-strategies)
-    -   [Rate Limiting](#rate-limiting)
-    -   [Sharding](#sharding)
-    -   [Checkpointing](#checkpointing)
--   [Citation](#citation)
+- [Reverb on macOS 10.13.6](#reverb-on-macos-10136)
+  - [The purpose of this repository](#the-purpose-of-this-repository)
+  - [General description](#general-description)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+    - [Nightly builds](#nightly-builds)
+    - [Debug builds](#debug-builds)
+    - [Build from source](#build-from-source)
+  - [Quick Start](#quick-start)
+  - [Detailed overview](#detailed-overview)
+    - [Tables](#tables)
+    - [Item selection strategies](#item-selection-strategies)
+    - [Rate Limiting](#rate-limiting)
+    - [Sharding](#sharding)
+    - [Checkpointing](#checkpointing)
+  - [Starting Reverb using `reverb_server` (beta)](#starting-reverb-using-reverb_server-beta)
+  - [Citation](#citation)
 
 ## Installation
 
@@ -374,8 +411,8 @@ tables: {
   rate_limiter: {
     min_size_to_sample: 1
     samples_per_insert: 1
-    min_diff: $(python3 -c "import sys; print(-sys.float_info.max)")
-    max_diff: $(python3 -c "import sys; print(sys.float_info.max)")
+    min_diff: $(python3.8 -c "import sys; print(-sys.float_info.max)")
+    max_diff: $(python3.8 -c "import sys; print(sys.float_info.max)")
   }
 }"
 ```

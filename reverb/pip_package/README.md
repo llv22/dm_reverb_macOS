@@ -1,3 +1,4 @@
+<!-- markdownlint-disable-file MD007 MD033 MD030 MD012 MD014 MD022 -->
 # How to develop and build Reverb with the Docker containers
 
 ## Overview
@@ -99,7 +100,7 @@ $ docker run --rm --mount "type=bind,src=$REVERB_DIR,dst=/tmp/reverb" \
 1. Compile Reverb.
 
   ```shell
-  $ python3.7 configure.py
+  $ python3.8 configure.py
   $ bazel build -c opt //reverb/pip_package:build_pip_package
   ```
 

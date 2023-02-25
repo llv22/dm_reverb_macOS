@@ -9,6 +9,7 @@ def clean_dep(dep):
 
 def get_python_path(ctx):
     path = ctx.os.environ.get("PYTHON_BIN_PATH")
+    print("Orlando: PYTHON_BIN_PATH = {}".format(path))
     if not path:
         fail(
             "Could not get environment variable PYTHON_BIN_PATH.  " +
@@ -99,6 +100,8 @@ def _find_python_solib_path(repo_ctx):
             .format(exec_result.stderr))
     solib_dir = exec_result.stdout.splitlines()[-1]
     full_path = repo_ctx.path("{}/{}".format(solib_dir, basename))
+    print("Orlando: Looking for python shared library file:\n{}/{}"
+        .format(solib_dir, basename))
     if not full_path.exists:
         fail("Unable to find python shared library file:\n{}/{}"
             .format(solib_dir, basename))
@@ -226,8 +229,8 @@ def _tensorflow_solib_repo_impl(repo_ctx):
 cc_library(
     name = "framework_lib",
     # srcs = ["tensorflow_solib/libtensorflow_framework.so.2"],
-    srcs = ["tensorflow_solib/libtensorflow_framework.2.dylib"],
-    deps = ["@python_includes", "@python_includes//:numpy_includes"],
+    srcs = ["tensorflow_solib/libtensorflow_framework.2.9.1.dylib"],
+    deps = ["@python_includes//:numpy_includes"],
     visibility = ["//visibility:public"],
 )
 """,
@@ -236,9 +239,13 @@ cc_library(
 def _python_includes_repo_impl(repo_ctx):
     python_include_path = _find_python_include_path(repo_ctx)
     python_solib = _find_python_solib_path(repo_ctx)
+    print("Orlando python_include_path: {}".format(python_include_path))
+    print("Orlando python_solib: {}".format(python_solib))
     repo_ctx.symlink(python_include_path, "python_includes")
     numpy_include_path = _find_numpy_include_path(repo_ctx)
+    print("Orlando numpy_include_path: {}".format(numpy_include_path))
     repo_ctx.symlink(numpy_include_path, "numpy_includes")
+    print("Orlando from :{} to :{}".format("{}/{}".format(python_solib.dir, python_solib.basename), python_solib.basename))
     repo_ctx.symlink(
         "{}/{}".format(python_solib.dir, python_solib.basename),
         python_solib.basename,
@@ -253,7 +260,7 @@ def _python_includes_repo_impl(repo_ctx):
 cc_library(
     name = "python_includes",
     hdrs = glob(["python_includes/**/*.h"]),
-    srcs = ["{}"],
+    # srcs = ["{}"],
     includes = ["python_includes"],
     visibility = ["//visibility:public"],
 )
@@ -304,11 +311,11 @@ def python_deps():
     http_archive(
         name = "pybind11",
         urls = [
-            "https://storage.googleapis.com/mirror.tensorflow.org/github.com/pybind/pybind11/archive/v2.4.3.tar.gz",
-            "https://github.com/pybind/pybind11/archive/v2.4.3.tar.gz",
+            # "https://storage.googleapis.com/mirror.tensorflow.org/github.com/pybind/pybind11/archive/v2.4.3.tar.gz",
+            "https://github.com/pybind/pybind11/archive/refs/tags/v2.10.3.tar.gz",
         ],
-        sha256 = "1eed57bc6863190e35637290f97a20c81cfe4d9090ac0a24f3bbf08f265eb71d",
-        strip_prefix = "pybind11-2.4.3",
+        sha256 = "5d8c4c5dda428d3a944ba3d2a5212cb988c2fae4670d58075a5a49075a6ca315",
+        strip_prefix = "pybind11-2.10.3",
         build_file = clean_dep("//third_party:pybind11.BUILD"),
     )
 
@@ -326,8 +333,8 @@ def github_grpc_deps():
     http_archive(
         name = "com_github_grpc_grpc",
         patch_cmds = [
-            """sed -i.bak 's/"python",/"python3",/g' third_party/py/python_configure.bzl""",
-            """sed -i.bak 's/PYTHONHASHSEED=0/PYTHONHASHSEED=0 python3/g' bazel/cython_library.bzl""",
+            """sed -i.bak 's/"python",/"python3.8",/g' third_party/py/python_configure.bzl""",
+            """sed -i.bak 's/PYTHONHASHSEED=0/PYTHONHASHSEED=0 python3.8/g' bazel/cython_library.bzl""",
         ],
         sha256 = "39bad059a712c6415b168cb3d922cb0e8c16701b475f047426c81b46577d844b",
         strip_prefix = "grpc-reverb_fix",

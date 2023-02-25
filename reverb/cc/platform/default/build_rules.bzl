@@ -451,6 +451,24 @@ def reverb_pybind_extension(
             "-fno-strict-aliasing",  # allow a wider range of code [aliasing] to compile.
             "-fexceptions",  # pybind relies on exceptions, required to compile.
             "-fvisibility=hidden",  # avoid pybind symbol clashes between DSOs.
+            "-shared",
+            "-fPIC",
+            # "-I/Users/llv23/opt/miniconda3/include/python3.8",
+            "-Wno-unused-result",
+            "-Wsign-compare",
+            "-Wunreachable-code",
+            "-DNDEBUG",
+            "-g",
+            "-fwrapv",
+            "-O3",
+            "-Wall",
+            "-Wstrict-prototypes",
+            # "-I/Users/llv23/opt/miniconda3/include",
+            "-arch x86_64",
+            "-L/Users/llv23/opt/miniconda3/lib/python3.8/config-3.8-darwin",
+            "-ldl",
+            "-framework CoreFoundation",
+            "-undefined dynamic_lookup",
         ],
         linkopts = linkopts + _rpath_linkopts(module_name) + [
             # "-Wl,--version-script",
@@ -536,7 +554,8 @@ def reverb_pybind_deps():
     return [
         "@pybind11",
         "@tensorflow_includes//:includes",
-        "@tensorflow_solib//:framework_lib",
+        "@python_includes//:numpy_includes",
+        # "@tensorflow_solib//:framework_lib",
     ]
 
 def reverb_tf_ops_visibility():

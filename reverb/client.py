@@ -487,7 +487,7 @@ class Client:
 
     Args:
       timeout: Timeout in seconds to wait for server response. By default no
-        deadline is set and call will block indefinetely until server responds.
+        deadline is set and call will block indefinitely until server responds.
 
     Returns:
       A dictionary mapping table names to their associated `TableInfo`
@@ -535,7 +535,7 @@ class Client:
     """Constructs a new `TrajectoryWriter`.
 
     Note: The chunk length is auto tuned by default. Use
-      `TrajectoryWriter.configure` to override this behaviour.
+      `TrajectoryWriter.configure` to override this behavior.
 
     See `TrajectoryWriter` for more detailed documentation about the writer
     itself.

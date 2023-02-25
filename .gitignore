@@ -3,3 +3,5 @@ bazel-bin/
 bazel-dm_reverb/
 bazel-out/
 bazel-testlogs/
+.DS_Store
+__pycache__/
