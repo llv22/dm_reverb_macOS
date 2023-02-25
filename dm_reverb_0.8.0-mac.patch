@@ -1,0 +1,1090 @@
+From b333f080306c6ca33d8a6bef8c2dc22b5526fb33 Mon Sep 17 00:00:00 2001
+From: Orlando Ding <xiandao.airs@gmail.com>
+Date: Wed, 22 Feb 2023 19:27:34 -0800
+Subject: [PATCH 1/3] orlando - for updates of dm_verb on macOS
+
+---
+ .bazelrc                                   | 2 +-
+ .gitignore                                 | 5 +++++
+ .reverb.bazelrc                            | 4 ++++
+ WORKSPACE                                  | 5 ++++-
+ bazel-bin                                  | 1 +
+ bazel-dm_reverb                            | 1 +
+ bazel-out                                  | 1 +
+ bazel-testlogs                             | 1 +
+ oss_build.sh                               | 5 +++--
+ python_bin_path.sh                         | 1 +
+ reverb/cc/platform/default/build_rules.bzl | 4 ++--
+ reverb/cc/platform/default/repo.bzl        | 8 +++++---
+ reverb/cc/table.cc                         | 4 ++--
+ 13 files changed, 31 insertions(+), 11 deletions(-)
+ create mode 100644 .gitignore
+ create mode 100644 .reverb.bazelrc
+ create mode 120000 bazel-bin
+ create mode 120000 bazel-dm_reverb
+ create mode 120000 bazel-out
+ create mode 120000 bazel-testlogs
+ mode change 100644 => 100755 oss_build.sh
+ create mode 100644 python_bin_path.sh
+
+diff --git a/.bazelrc b/.bazelrc
+index 9a4b54d..9c92d97 100644
+--- a/.bazelrc
++++ b/.bazelrc
+@@ -17,7 +17,7 @@ build --cxxopt="-std=c++14"
+ build --cxxopt="-D_GLIBCXX_USE_CXX11_ABI=1"
+ build --auto_output_filter=subpackages
+ build --copt="-Wall" --copt="-Wno-sign-compare"
+-build --linkopt="-lrt -lm"
++# build --linkopt="-lrt -lm"
+ # We build with AVX and eigen byte alignment to match tensorflow's (and Eigen)
+ # pip package byte alignment.  See b/186669968 for more details.
+ build --copt=-mavx --copt=-DEIGEN_MAX_ALIGN_BYTES=64
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..032b745
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,5 @@
++.vscode/
++bazel-bin/
++bazel-dm_reverb/
++bazel-out/
++bazel-testlogs/
+\ No newline at end of file
+diff --git a/.reverb.bazelrc b/.reverb.bazelrc
+new file mode 100644
+index 0000000..3c184f9
+--- /dev/null
++++ b/.reverb.bazelrc
+@@ -0,0 +1,4 @@
++build --action_env PYTHON_BIN_PATH="/Users/llv23/opt/miniconda3/bin/python"
++build --action_env PYTHON_LIB_PATH="/Users/llv23/opt/miniconda3/lib/python3.8/site-packages"
++build --python_path="/Users/llv23/opt/miniconda3/bin/python"
++build --repo_env=PYTHON_BIN_PATH="/Users/llv23/opt/miniconda3/bin/python"
+diff --git a/WORKSPACE b/WORKSPACE
+index cbc2e20..5d9c48e 100644
+--- a/WORKSPACE
++++ b/WORKSPACE
+@@ -6,10 +6,13 @@ workspace(name = "reverb")
+ #  2. Calculate the sha256 of the binary:
+ #     PROTOC_VERSION="3.11.4"
+ #     curl -L "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip" | sha256sum
++
++#     PROTOC_VERSION="3.9.0"
++#     curl -L "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-osx-x86_64.zip" | sha256sum
+ #  3. Update the two variables below.
+ #
+ PROTOC_VERSION = "3.9.0"
+-PROTOC_SHA256 = "15e395b648a1a6dda8fd66868824a396e9d3e89bc2c8648e3b9ab9801bea5d55"
++PROTOC_SHA256 = "99729771ccb2f70621ac20f241f6ab1c70271f2c6bd2ea1ddbd9c2f7ae08d316"
+ 
+ load(
+     "//reverb/cc/platform/default:repo.bzl",
+diff --git a/bazel-bin b/bazel-bin
+new file mode 120000
+index 0000000..edd341c
+--- /dev/null
++++ b/bazel-bin
+@@ -0,0 +1 @@
++/private/var/tmp/_bazel_llv23/0d2f910c738b958840a7c3ed78462485/execroot/reverb/bazel-out/darwin-opt/bin
+\ No newline at end of file
+diff --git a/bazel-dm_reverb b/bazel-dm_reverb
+new file mode 120000
+index 0000000..4b9ec39
+--- /dev/null
++++ b/bazel-dm_reverb
+@@ -0,0 +1 @@
++/private/var/tmp/_bazel_llv23/0d2f910c738b958840a7c3ed78462485/execroot/reverb
+\ No newline at end of file
+diff --git a/bazel-out b/bazel-out
+new file mode 120000
+index 0000000..7c3b739
+--- /dev/null
++++ b/bazel-out
+@@ -0,0 +1 @@
++/private/var/tmp/_bazel_llv23/0d2f910c738b958840a7c3ed78462485/execroot/reverb/bazel-out
+\ No newline at end of file
+diff --git a/bazel-testlogs b/bazel-testlogs
+new file mode 120000
+index 0000000..def1061
+--- /dev/null
++++ b/bazel-testlogs
+@@ -0,0 +1 @@
++/private/var/tmp/_bazel_llv23/0d2f910c738b958840a7c3ed78462485/execroot/reverb/bazel-out/darwin-opt/testlogs
+\ No newline at end of file
+diff --git a/oss_build.sh b/oss_build.sh
+old mode 100644
+new mode 100755
+index ff74872..a5ab40a
+--- a/oss_build.sh
++++ b/oss_build.sh
+@@ -98,7 +98,8 @@ for python_version in $PYTHON_VERSIONS; do
+     export PYTHON_BIN_PATH=/usr/bin/python3.7 && export PYTHON_LIB_PATH=/usr/local/lib/python3.7/dist-packages
+     ABI=cp37
+   elif [ "$python_version" = "3.8" ]; then
+-    export PYTHON_BIN_PATH=/usr/bin/python3.8 && export PYTHON_LIB_PATH=/usr/local/lib/python3.8/dist-packages
++    # export PYTHON_BIN_PATH=/usr/bin/python3.8 && export PYTHON_LIB_PATH=/usr/local/lib/python3.8/dist-packages
++    export PYTHON_BIN_PATH=/Users/llv23/opt/miniconda3/bin/python3.8 && export PYTHON_LIB_PATH=/Users/llv23/opt/miniconda3/lib/python3.8/site-packages
+     ABI=cp38
+   elif [ "$python_version" = "3.9" ]; then
+     export PYTHON_BIN_PATH=/usr/bin/python3.9 && export PYTHON_LIB_PATH=/usr/local/lib/python3.9/dist-packages
+@@ -138,7 +139,7 @@ for python_version in $PYTHON_VERSIONS; do
+     echo "Run Python tests..."
+     set +e
+ 
+-    bash run_python_tests.sh |& tee ./unittest_log.txt
++    bash run_python_tests.sh & tee ./unittest_log.txt
+     UNIT_TEST_ERROR_CODE=$?
+     set -e
+     if [[ $UNIT_TEST_ERROR_CODE != 0 ]]; then
+diff --git a/python_bin_path.sh b/python_bin_path.sh
+new file mode 100644
+index 0000000..00df38f
+--- /dev/null
++++ b/python_bin_path.sh
+@@ -0,0 +1 @@
++export PYTHON_BIN_PATH="/Users/llv23/opt/miniconda3/bin/python"
+\ No newline at end of file
+diff --git a/reverb/cc/platform/default/build_rules.bzl b/reverb/cc/platform/default/build_rules.bzl
+index 6bae722..42fdea1 100644
+--- a/reverb/cc/platform/default/build_rules.bzl
++++ b/reverb/cc/platform/default/build_rules.bzl
+@@ -311,7 +311,7 @@ def reverb_gen_op_wrapper_py(name, out, kernel_lib, linkopts = [], **kwargs):
+         ],
+         linkshared = 1,
+         linkopts = linkopts + _rpath_linkopts(module_name) + [
+-            "-Wl,--version-script",
++            # "-Wl,--version-script",
+             "$(location %s)" % version_script_file,
+         ],
+         **kwargs
+@@ -453,7 +453,7 @@ def reverb_pybind_extension(
+             "-fvisibility=hidden",  # avoid pybind symbol clashes between DSOs.
+         ],
+         linkopts = linkopts + _rpath_linkopts(module_name) + [
+-            "-Wl,--version-script",
++            # "-Wl,--version-script",
+             "$(location %s)" % version_script_file,
+         ],
+         deps = depset(deps + [
+diff --git a/reverb/cc/platform/default/repo.bzl b/reverb/cc/platform/default/repo.bzl
+index 3c9dc9a..9b0f8d9 100644
+--- a/reverb/cc/platform/default/repo.bzl
++++ b/reverb/cc/platform/default/repo.bzl
+@@ -89,7 +89,7 @@ def _find_python_solib_path(repo_ctx):
+         fail("Could not locate python shared library path:\n{}"
+             .format(exec_result.stderr))
+     version = exec_result.stdout.splitlines()[-1]
+-    basename = "lib{}.so".format(version)
++    basename = "lib{}.dylib".format(version)
+     exec_result = repo_ctx.execute(
+         ["{}-config".format(version), "--configdir"],
+         quiet = True,
+@@ -225,7 +225,8 @@ def _tensorflow_solib_repo_impl(repo_ctx):
+         content = """
+ cc_library(
+     name = "framework_lib",
+-    srcs = ["tensorflow_solib/libtensorflow_framework.so.2"],
++    # srcs = ["tensorflow_solib/libtensorflow_framework.so.2"],
++    srcs = ["tensorflow_solib/libtensorflow_framework.2.dylib"],
+     deps = ["@python_includes", "@python_includes//:numpy_includes"],
+     visibility = ["//visibility:public"],
+ )
+@@ -363,7 +364,8 @@ def _protoc_archive(ctx):
+     sha256 = ctx.attr.sha256
+ 
+     urls = [
+-        "https://github.com/protocolbuffers/protobuf/releases/download/v%s/protoc-%s-linux-x86_64.zip" % (version, version),
++        "https://github.com/protocolbuffers/protobuf/releases/download/v%s/protoc-%s-osx-x86_64.zip" % (version, version),
++        # "https://github.com/protocolbuffers/protobuf/releases/download/v%s/protoc-%s-linux-x86_64.zip" % (version, version),
+     ]
+     ctx.download_and_extract(
+         url = urls,
+diff --git a/reverb/cc/table.cc b/reverb/cc/table.cc
+index 447bade..25df8c7 100644
+--- a/reverb/cc/table.cc
++++ b/reverb/cc/table.cc
+@@ -154,10 +154,10 @@ Table::Table(std::string name, std::shared_ptr<ItemSelector> sampler,
+       num_unique_samples_(0),
+       max_size_(max_size),
+       max_enqueued_inserts_(
+-          std::max(1L, std::min<int64_t>(max_size * kMaxEnqueuedInsertsPerc,
++          std::max<int64_t>(1L, std::min<int64_t>(max_size * kMaxEnqueuedInsertsPerc,
+                                        kMaxEnqueuedInserts))),
+       max_enqueued_extension_ops_(
+-          std::max(1L, std::min<int64_t>(max_size * kMaxPendingExtensionOpsPerc,
++          std::max<int64_t>(1L, std::min<int64_t>(max_size * kMaxPendingExtensionOpsPerc,
+                                        kMaxPendingExtensionOps))),
+       max_times_sampled_(max_times_sampled),
+       name_(std::move(name)),
+-- 
+2.17.2 (Apple Git-113)
+
+
+From 43bd567e8f6b58557c52f7df8874f84096908ebe Mon Sep 17 00:00:00 2001
+From: Orlando Ding <xiandao.airs@gmail.com>
+Date: Sat, 25 Feb 2023 14:14:35 -0800
+Subject: [PATCH 2/3] orlando - for fixing general issue on macOS10.13.6
+
+---
+ .bazelrc                                   |  8 +--
+ .gitignore                                 |  4 +-
+ .reverb.bazelrc                            |  6 +-
+ README.md                                  | 61 +++++++++++++----
+ configure.py                               |  6 +-
+ examples/demo.ipynb                        | 59 ++++++++++-------
+ examples/frame_stacking.ipynb              | 76 ++++++++++++----------
+ macOS_reverb_symbol.sh                     | 16 +++++
+ oss_build.sh                               |  2 +-
+ python_bin_path.sh                         |  2 +-
+ reverb/BUILD                               |  2 +-
+ reverb/cc/platform/default/build_rules.bzl | 21 +++++-
+ reverb/cc/platform/default/repo.bzl        | 25 ++++---
+ reverb/client.py                           |  4 +-
+ reverb/pip_package/README.md               |  3 +-
+ reverb/pip_package/build_pip_package.sh    |  4 +-
+ reverb/pybind.cc                           |  2 +-
+ run_python_tests.sh                        |  2 +-
+ 18 files changed, 203 insertions(+), 100 deletions(-)
+ create mode 100644 macOS_reverb_symbol.sh
+
+diff --git a/.bazelrc b/.bazelrc
+index 9c92d97..451b094 100644
+--- a/.bazelrc
++++ b/.bazelrc
+@@ -5,15 +5,15 @@ build --define=grpc_no_ares=true
+ build:short_logs --output_filter=DONT_MATCH_ANYTHING
+ 
+ # Force python3
+-build --action_env=PYTHON_BIN_PATH=python3
+-build --repo_env=PYTHON_BIN_PATH=python3
+-build --python_path=python3
++build --action_env=PYTHON_BIN_PATH=python3.8
++build --repo_env=PYTHON_BIN_PATH=python3.8
++build --python_path=python3.8
+ 
+ build:manylinux2014 --crosstool_top=//third_party/toolchains/preconfig/ubuntu16.04/gcc7_manylinux2014:toolchain
+ 
+ build -c opt
+ build --cxxopt="-std=c++14"
+-# We can emove this flag (we keep it explicit for now)
++# We can remove this flag (we keep it explicit for now)
+ build --cxxopt="-D_GLIBCXX_USE_CXX11_ABI=1"
+ build --auto_output_filter=subpackages
+ build --copt="-Wall" --copt="-Wno-sign-compare"
+diff --git a/.gitignore b/.gitignore
+index 032b745..de2fa56 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -2,4 +2,6 @@
+ bazel-bin/
+ bazel-dm_reverb/
+ bazel-out/
+-bazel-testlogs/
+\ No newline at end of file
++bazel-testlogs/
++.DS_Store
++__pycache__/
+\ No newline at end of file
+diff --git a/.reverb.bazelrc b/.reverb.bazelrc
+index 3c184f9..8dface0 100644
+--- a/.reverb.bazelrc
++++ b/.reverb.bazelrc
+@@ -1,4 +1,4 @@
+-build --action_env PYTHON_BIN_PATH="/Users/llv23/opt/miniconda3/bin/python"
++build --action_env PYTHON_BIN_PATH="/Users/llv23/opt/miniconda3/bin/python3.8"
+ build --action_env PYTHON_LIB_PATH="/Users/llv23/opt/miniconda3/lib/python3.8/site-packages"
+-build --python_path="/Users/llv23/opt/miniconda3/bin/python"
+-build --repo_env=PYTHON_BIN_PATH="/Users/llv23/opt/miniconda3/bin/python"
++build --python_path="/Users/llv23/opt/miniconda3/bin/python3.8"
++build --repo_env=PYTHON_BIN_PATH="/Users/llv23/opt/miniconda3/bin/python3.8"
+diff --git a/README.md b/README.md
+index cda02a5..8997f42 100644
+--- a/README.md
++++ b/README.md
+@@ -1,4 +1,33 @@
+-# Reverb
++<!-- markdownlint-disable-file MD029 MD030 MD036 MD012 MD040 MD004 -->
++# Reverb on macOS 10.13.6
++
++## The purpose of this repository
++
++This repository is forked by Orlando, Ding in order to make dm_verb available on macOS 10.13.6.
++
++Several key implementations to fix the issues on macOS 10.13.6:
++
++* python3.8 environment preparation to avoid entangling with the system default python (3.7 in framework)
++* [reverb/cc/platform/default/build_rules.bzl](reverb/cc/platform/default/build_rules.bzl), remove the reliance with libpython3.8.dylib that will lead to circular dependency during runtime and the ensuring core dump
++* correct the dynamic link between libraries. Regarding manual solution via install_name_tool, refer to [macOS_reverb_symbol.sh](macOS_reverb_symbol.sh)
++
++The building process as follow:
++
++1. Compilation
++
++```bash
++python3.8 configure.py
++bazel build -c opt //reverb/pip_package:build_pip_package
++```
++
++2. build and install whl
++
++```bash
++./bazel-bin/reverb/pip_package/build_pip_package --dst /tmp/reverb_build/dist/
++```
++
++## General description
++
+ ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/dm-reverb)
+ [![PyPI version](https://badge.fury.io/py/dm-reverb.svg)](https://badge.fury.io/py/dm-reverb)
+ 
+@@ -10,15 +39,23 @@ LIFO, and priority queues.
+ 
+ ## Table of Contents
+ 
+--   [Installation](#installation)
+--   [Quick Start](#quick-start)
+--   [Detailed Overview](#detailed-overview)
+-    -   [Tables](#tables)
+-    -   [Item Selection Strategies](#item-selection-strategies)
+-    -   [Rate Limiting](#rate-limiting)
+-    -   [Sharding](#sharding)
+-    -   [Checkpointing](#checkpointing)
+--   [Citation](#citation)
++- [Reverb on macOS 10.13.6](#reverb-on-macos-10136)
++  - [The purpose of this repository](#the-purpose-of-this-repository)
++  - [General description](#general-description)
++  - [Table of Contents](#table-of-contents)
++  - [Installation](#installation)
++    - [Nightly builds](#nightly-builds)
++    - [Debug builds](#debug-builds)
++    - [Build from source](#build-from-source)
++  - [Quick Start](#quick-start)
++  - [Detailed overview](#detailed-overview)
++    - [Tables](#tables)
++    - [Item selection strategies](#item-selection-strategies)
++    - [Rate Limiting](#rate-limiting)
++    - [Sharding](#sharding)
++    - [Checkpointing](#checkpointing)
++  - [Starting Reverb using `reverb_server` (beta)](#starting-reverb-using-reverb_server-beta)
++  - [Citation](#citation)
+ 
+ ## Installation
+ 
+@@ -374,8 +411,8 @@ tables: {
+   rate_limiter: {
+     min_size_to_sample: 1
+     samples_per_insert: 1
+-    min_diff: $(python3 -c "import sys; print(-sys.float_info.max)")
+-    max_diff: $(python3 -c "import sys; print(sys.float_info.max)")
++    min_diff: $(python3.8 -c "import sys; print(-sys.float_info.max)")
++    max_diff: $(python3.8 -c "import sys; print(sys.float_info.max)")
+   }
+ }"
+ ```
+diff --git a/configure.py b/configure.py
+index 7581f6f..33d456a 100644
+--- a/configure.py
++++ b/configure.py
+@@ -29,11 +29,11 @@
+ """Configure script to get build parameters from user.
+ 
+ This should be run before building reverb with Bazel. The easiest usage is
+-`python3 configure.py`. It will use the version of python to suggest the correct
++`python3.8 configure.py`. It will use the version of python to suggest the correct
+ paths to set for the bazel config.
+ 
+ Shamelessly taken from TensorFlow:
+-  htps://github.com/tensorflow/tensorflow/blob/master/configure.py
++  https://github.com/tensorflow/tensorflow/blob/master/configure.py
+ """
+ import argparse
+ import os
+@@ -149,7 +149,7 @@ def setup_python(environ_cp):
+   write_to_bazelrc('build --repo_env=PYTHON_BIN_PATH=\"%s"' % python_bin_path)
+   environ_cp['PYTHON_BIN_PATH'] = python_bin_path
+ 
+-  # If choosen python_lib_path is from a path specified in the PYTHONPATH
++  # If chosen python_lib_path is from a path specified in the PYTHONPATH
+   # variable, need to tell bazel to include PYTHONPATH
+   if environ_cp.get('PYTHONPATH'):
+     python_paths = environ_cp.get('PYTHONPATH').split(':')
+diff --git a/examples/demo.ipynb b/examples/demo.ipynb
+index 2bc7130..3c196cc 100644
+--- a/examples/demo.ipynb
++++ b/examples/demo.ipynb
+@@ -39,18 +39,18 @@
+       "source": [
+         "# Environments\n",
+         "\n",
+-        "\u003ctable class=\"tfo-notebook-buttons\" align=\"left\"\u003e\n",
+-        "  \u003ctd\u003e\n",
+-        "    \u003ca target=\"_blank\" href=\"https://colab.research.google.com/github/deepmind/reverb/blob/master/examples/demo.ipynb\"\u003e\n",
+-        "    \u003cimg src=\"https://www.tensorflow.org/images/colab_logo_32px.png\" /\u003e\n",
+-        "    Run in Google Colab\u003c/a\u003e\n",
+-        "  \u003c/td\u003e\n",
+-        "  \u003ctd\u003e\n",
+-        "    \u003ca target=\"_blank\" href=\"https://github.com/deepmind/reverb/blob/master/examples/demo.ipynb\"\u003e\n",
+-        "    \u003cimg src=\"https://www.tensorflow.org/images/GitHub-Mark-32px.png\" /\u003e\n",
+-        "    View source on GitHub\u003c/a\u003e\n",
+-        "  \u003c/td\u003e\n",
+-        "\u003c/table\u003e"
++        "<table class=\"tfo-notebook-buttons\" align=\"left\">\n",
++        "  <td>\n",
++        "    <a target=\"_blank\" href=\"https://colab.research.google.com/github/deepmind/reverb/blob/master/examples/demo.ipynb\">\n",
++        "    <img src=\"https://www.tensorflow.org/images/colab_logo_32px.png\" />\n",
++        "    Run in Google Colab</a>\n",
++        "  </td>\n",
++        "  <td>\n",
++        "    <a target=\"_blank\" href=\"https://github.com/deepmind/reverb/blob/master/examples/demo.ipynb\">\n",
++        "    <img src=\"https://www.tensorflow.org/images/GitHub-Mark-32px.png\" />\n",
++        "    View source on GitHub</a>\n",
++        "  </td>\n",
++        "</table>"
+       ]
+     },
+     {
+@@ -88,8 +88,8 @@
+       },
+       "outputs": [],
+       "source": [
+-        "!pip install dm-tree\n",
+-        "!pip install dm-reverb[tensorflow]"
++        "%pip install dm-tree\n",
++        "%pip install dm-reverb[tensorflow]"
+       ]
+     },
+     {
+@@ -136,11 +136,11 @@
+         "OBSERVATION_SPEC = tf.TensorSpec([10, 10], tf.uint8)\n",
+         "ACTION_SPEC = tf.TensorSpec([2], tf.float32)\n",
+         "\n",
+-        "def agent_step(unused_timestep) -\u003e tf.Tensor:\n",
+-        "  return tf.cast(tf.random.uniform(ACTION_SPEC.shape) \u003e .5,\n",
++        "def agent_step(unused_timestep) -> tf.Tensor:\n",
++        "  return tf.cast(tf.random.uniform(ACTION_SPEC.shape) > .5,\n",
+         "                 ACTION_SPEC.dtype)\n",
+         "\n",
+-        "def environment_step(unused_action) -\u003e tf.Tensor:\n",
++        "def environment_step(unused_action) -> tf.Tensor:\n",
+         "  return tf.cast(tf.random.uniform(OBSERVATION_SPEC.shape, maxval=256),\n",
+         "                 OBSERVATION_SPEC.dtype)"
+       ]
+@@ -250,7 +250,7 @@
+         "    writer.append({'action': action, 'observation': timestep})\n",
+         "    timestep = environment_step(action)\n",
+         "\n",
+-        "    if step \u003e= 2:\n",
++        "    if step >= 2:\n",
+         "      # In this example, the item consists of the 3 most recent timesteps that\n",
+         "      # were added to the writer and has a priority of 1.5.\n",
+         "      writer.create_item(\n",
+@@ -283,7 +283,7 @@
+         "id": "hK90myIgxuGL"
+       },
+       "source": [
+-        "\u003cimg src=\"https://raw.githubusercontent.com/deepmind/reverb/master/docs/animations/diagram1.svg\" /\u003e"
++        "<img src=\"https://raw.githubusercontent.com/deepmind/reverb/master/docs/animations/diagram1.svg\" />"
+       ]
+     },
+     {
+@@ -608,13 +608,13 @@
+         "    action = agent_step(timestep)\n",
+         "    timestep = environment_step(action)\n",
+         "\n",
+-        "    if step \u003e= 1:\n",
++        "    if step >= 1:\n",
+         "      writer.create_item(\n",
+         "          table='my_table_b',\n",
+         "          priority=4-step,\n",
+         "          trajectory=writer.history['timestep'][-2:])\n",
+         "\n",
+-        "    if step \u003e= 2:\n",
++        "    if step >= 2:\n",
+         "      writer.create_item(\n",
+         "          table='my_table_a',\n",
+         "          priority=4-step,\n",
+@@ -630,7 +630,7 @@
+         "This diagram shows the state of the server after executing the above cell.\n",
+         "\n",
+         "\n",
+-        "\u003cimg src=\"https://raw.githubusercontent.com/deepmind/reverb/master/docs/animations/diagram2.svg\" /\u003e"
++        "<img src=\"https://raw.githubusercontent.com/deepmind/reverb/master/docs/animations/diagram2.svg\" />"
+       ]
+     },
+     {
+@@ -818,6 +818,7 @@
+       ]
+     },
+     {
++      "attachments": {},
+       "cell_type": "markdown",
+       "metadata": {
+         "id": "p98u_jg3CAxG"
+@@ -825,7 +826,7 @@
+       "source": [
+         "\n",
+         "This example is intended to be used in a distributed or multi-threaded\n",
+-        "enviroment where insertion blocking will be unblocked by sample calls from\n",
++        "environment where insertion blocking will be unblocked by sample calls from\n",
+         "an independent thread. If the system is single threaded, the blocked\n",
+         "insertion call will cause a deadlock.\n"
+       ]
+@@ -840,8 +841,18 @@
+       "toc_visible": true
+     },
+     "kernelspec": {
+-      "display_name": "Python 3",
++      "display_name": "base",
++      "language": "python",
+       "name": "python3"
++    },
++    "language_info": {
++      "name": "python",
++      "version": "3.8.8"
++    },
++    "vscode": {
++      "interpreter": {
++        "hash": "021687e6e50a7e461efd229279203d21f9eccb24620507fb82a31015387ec3b5"
++      }
+     }
+   },
+   "nbformat": 4,
+diff --git a/examples/frame_stacking.ipynb b/examples/frame_stacking.ipynb
+index 824ece2..fba576f 100644
+--- a/examples/frame_stacking.ipynb
++++ b/examples/frame_stacking.ipynb
+@@ -43,9 +43,9 @@
+       },
+       "outputs": [],
+       "source": [
+-        "!pip install tf\n",
+-        "!pip install dm-tree\n",
+-        "!pip install dm-reverb"
++        "%pip install tf\n",
++        "%pip install dm-tree\n",
++        "%pip install dm-reverb"
+       ]
+     },
+     {
+@@ -56,18 +56,18 @@
+       "source": [
+         "# Environments\n",
+         "\n",
+-        "\u003ctable class=\"tfo-notebook-buttons\" align=\"left\"\u003e\n",
+-        "  \u003ctd\u003e\n",
+-        "    \u003ca target=\"_blank\" href=\"https://colab.research.google.com/github/deepmind/reverb/blob/master/examples/frame_stacking.ipynb\"\u003e\n",
+-        "    \u003cimg src=\"https://www.tensorflow.org/images/colab_logo_32px.png\" /\u003e\n",
+-        "    Run in Google Colab\u003c/a\u003e\n",
+-        "  \u003c/td\u003e\n",
+-        "  \u003ctd\u003e\n",
+-        "    \u003ca target=\"_blank\" href=\"https://github.com/deepmind/reverb/blob/master/examples/frame_stacking.ipynb\"\u003e\n",
+-        "    \u003cimg src=\"https://www.tensorflow.org/images/GitHub-Mark-32px.png\" /\u003e\n",
+-        "    View source on GitHub\u003c/a\u003e\n",
+-        "  \u003c/td\u003e\n",
+-        "\u003c/table\u003e"
++        "<table class=\"tfo-notebook-buttons\" align=\"left\">\n",
++        "  <td>\n",
++        "    <a target=\"_blank\" href=\"https://colab.research.google.com/github/deepmind/reverb/blob/master/examples/frame_stacking.ipynb\">\n",
++        "    <img src=\"https://www.tensorflow.org/images/colab_logo_32px.png\" />\n",
++        "    Run in Google Colab</a>\n",
++        "  </td>\n",
++        "  <td>\n",
++        "    <a target=\"_blank\" href=\"https://github.com/deepmind/reverb/blob/master/examples/frame_stacking.ipynb\">\n",
++        "    <img src=\"https://www.tensorflow.org/images/GitHub-Mark-32px.png\" />\n",
++        "    View source on GitHub</a>\n",
++        "  </td>\n",
++        "</table>"
+       ]
+     },
+     {
+@@ -198,9 +198,9 @@
+         "def store_stacked(stack_size: int, stride: int, sequence_length: int):\n",
+         "  \"\"\"Simple example where frames are stacked before sent to Reverb.\n",
+         "\n",
+-        "  If `stride` \u003c `stack_size` then stacks will \"overlap\".\n",
+-        "  If `stride` == `stack_size` then stacks will be adjecent.\n",
+-        "  If `stride` \u003e `stack_size` then frames between stacks will be dropped.\n",
++        "  If `stride` < `stack_size` then stacks will \"overlap\".\n",
++        "  If `stride` == `stack_size` then stacks will be adjacent.\n",
++        "  If `stride` > `stack_size` then frames between stacks will be dropped.\n",
+         "\n",
+         "  Args:\n",
+         "    stack_size: The number of frames to stack.\n",
+@@ -218,7 +218,7 @@
+         "      buffer.append(frame)\n",
+         "\n",
+         "      # We can't insert anything before the first stack is full.\n",
+-        "      if len(buffer) \u003c stack_size or (i + 1) % stride != 0:\n",
++        "      if len(buffer) < stack_size or (i + 1) % stride != 0:\n",
+         "        continue\n",
+         "\n",
+         "      # Stack the frames in buffer and insert the data into Reverb. The shape of\n",
+@@ -228,7 +228,7 @@
+         "      # If `sequence_length` full stacks have been written then insert an item\n",
+         "      # that can be sampled.\n",
+         "      stacks_written = (i + 1) // stride - (stack_size - 1) // stride\n",
+-        "      if stacks_written \u003e= sequence_length:\n",
++        "      if stacks_written >= sequence_length:\n",
+         "        writer.create_item(table='stacked_frames',\n",
+         "                           trajectory=writer.history[-sequence_length:],\n",
+         "                           priority=1.0)\n",
+@@ -482,8 +482,8 @@
+         "#\n",
+         "#   [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]\n",
+         "#\n",
+-        "#     -\u003e [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]\n",
+-        "#     -\u003e [[5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]]\n",
++        "#     -> [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]\n",
++        "#     -> [[5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]]\n",
+         "#\n",
+         "\n",
+         "store_stacked(stack_size=4, stride=4, sequence_length=3)"
+@@ -728,9 +728,9 @@
+         "#\n",
+         "#   [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]\n",
+         "#\n",
+-        "#     -\u003e [[1, 2, 3, 4], [3, 4, 5, 6], [5, 6, 7, 8]]\n",
+-        "#     -\u003e [[3, 4, 5, 6], [5, 6, 7, 8], [7, 8, 9, 10]]\n",
+-        "#     -\u003e [[5, 6, 7, 8], [7, 8, 9, 10], [9, 10, 11, 12]]\n",
++        "#     -> [[1, 2, 3, 4], [3, 4, 5, 6], [5, 6, 7, 8]]\n",
++        "#     -> [[3, 4, 5, 6], [5, 6, 7, 8], [7, 8, 9, 10]]\n",
++        "#     -> [[5, 6, 7, 8], [7, 8, 9, 10], [9, 10, 11, 12]]\n",
+         "#\n",
+         "\n",
+         "store_stacked(stack_size=4, stride=2, sequence_length=3)"
+@@ -877,9 +877,9 @@
+         "#\n",
+         "#   [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]\n",
+         "#\n",
+-        "#     -\u003e [[1, 2], [4, 5], [6, 7]]\n",
+-        "#     -\u003e [[4, 5], [6, 7], [8, 9]]\n",
+-        "#     -\u003e [[6, 7], [8, 9], [11, 12]]\n",
++        "#     -> [[1, 2], [4, 5], [6, 7]]\n",
++        "#     -> [[4, 5], [6, 7], [8, 9]]\n",
++        "#     -> [[6, 7], [8, 9], [11, 12]]\n",
+         "#\n",
+         "\n",
+         "store_stacked(stack_size=2, stride=3, sequence_length=3)"
+@@ -949,7 +949,7 @@
+         "    for i, frame in enumerate(frame_generator(flat_sequence_length * 5)):\n",
+         "      writer.append(frame)\n",
+         "\n",
+-        "      if i + 1 \u003e= flat_sequence_length:\n",
++        "      if i + 1 >= flat_sequence_length:\n",
+         "        writer.create_item(table='flat_frames',\n",
+         "                           trajectory=writer.history[-flat_sequence_length:],\n",
+         "                           priority=1.0)\n",
+@@ -1120,9 +1120,9 @@
+         "#\n",
+         "#   [1, 2, 3, 4, 5, 6]\n",
+         "#\n",
+-        "#     -\u003e [1, 2, 3, 4] -\u003e [[1, 2], [2, 3], [3, 4]]\n",
+-        "#     -\u003e [2, 3, 4, 5] -\u003e [[2, 3], [3, 4], [4, 5]]\n",
+-        "#     -\u003e [3, 4, 5, 6] -\u003e [[3, 4], [4, 5], [5, 6]]\n",
++        "#     -> [1, 2, 3, 4] -> [[1, 2], [2, 3], [3, 4]]\n",
++        "#     -> [2, 3, 4, 5] -> [[2, 3], [3, 4], [4, 5]]\n",
++        "#     -> [3, 4, 5, 6] -> [[3, 4], [4, 5], [5, 6]]\n",
+         "#\n",
+         "\n",
+         "store_flat(stack_size=2, sequence_length=3)"
+@@ -1136,8 +1136,18 @@
+       "provenance": []
+     },
+     "kernelspec": {
+-      "display_name": "Python 3",
++      "display_name": "base",
++      "language": "python",
+       "name": "python3"
++    },
++    "language_info": {
++      "name": "python",
++      "version": "3.8.8"
++    },
++    "vscode": {
++      "interpreter": {
++        "hash": "021687e6e50a7e461efd229279203d21f9eccb24620507fb82a31015387ec3b5"
++      }
+     }
+   },
+   "nbformat": 4,
+diff --git a/macOS_reverb_symbol.sh b/macOS_reverb_symbol.sh
+new file mode 100644
+index 0000000..3d9646a
+--- /dev/null
++++ b/macOS_reverb_symbol.sh
+@@ -0,0 +1,16 @@
++export LIB_REVERB_PATH=/Users/llv23/opt/miniconda3/lib/python3.8/site-packages/reverb
++# otool -L $LIB_REVERB_PATH/libpybind.so
++install_name_tool -change @loader_path/../_solib_darwin/_U_S_Sreverb_Scc_Cpatterns_Ucc_Uproto___Ureverb_Scc/libpatterns_cc_proto.so $LIB_REVERB_PATH/libpatterns_cc_proto.so $LIB_REVERB_PATH/libpybind.so
++install_name_tool -change @loader_path/../_solib_darwin/_U_S_Sreverb_Scc_Creverb_Uservice_Ucc_Uproto___Ureverb_Scc/libreverb_service_cc_proto.so $LIB_REVERB_PATH/libreverb_service_cc_proto.so $LIB_REVERB_PATH/libpybind.so
++install_name_tool -change @loader_path/../_solib_darwin/_U_S_Sreverb_Scc_Scheckpointing_Ccheckpoint_Ucc_Uproto___Ureverb_Scc_Scheckpointing/libcheckpoint_cc_proto.so $LIB_REVERB_PATH/libcheckpoint_cc_proto.so $LIB_REVERB_PATH/libpybind.so
++install_name_tool -change @loader_path/../_solib_darwin/_U_S_Sreverb_Scc_Cschema_Ucc_Uproto___Ureverb_Scc/libschema_cc_proto.so $LIB_REVERB_PATH/libschema_cc_proto.so $LIB_REVERB_PATH/libpybind.so
++# otool -L $LIB_REVERB_PATH/libreverb_service_cc_proto.so
++install_name_tool -change @loader_path/../../_solib_darwin/_U_S_Sreverb_Scc_Cschema_Ucc_Uproto___Ureverb_Scc/libschema_cc_proto.so $LIB_REVERB_PATH/libschema_cc_proto.so $LIB_REVERB_PATH/libreverb_service_cc_proto.so
++# otool -L $LIB_REVERB_PATH/libcheckpoint_cc_proto.so
++install_name_tool -change @loader_path/../../../_solib_darwin/_U_S_Sreverb_Scc_Cschema_Ucc_Uproto___Ureverb_Scc/libschema_cc_proto.so $LIB_REVERB_PATH/libschema_cc_proto.so $LIB_REVERB_PATH/libcheckpoint_cc_proto.so
++
++# otool -L $LIB_REVERB_PATH/cc/ops/libgen_reverb_ops_gen_op.so
++install_name_tool -change @loader_path/../../../_solib_darwin/_U_S_Sreverb_Scc_Cpatterns_Ucc_Uproto___Ureverb_Scc/libpatterns_cc_proto.so $LIB_REVERB_PATH/libpatterns_cc_proto.so $LIB_REVERB_PATH/cc/ops/libgen_reverb_ops_gen_op.so
++install_name_tool -change @loader_path/../../../_solib_darwin/_U_S_Sreverb_Scc_Creverb_Uservice_Ucc_Uproto___Ureverb_Scc/libreverb_service_cc_proto.so $LIB_REVERB_PATH/libreverb_service_cc_proto.so $LIB_REVERB_PATH/cc/ops/libgen_reverb_ops_gen_op.so
++install_name_tool -change @loader_path/../../../_solib_darwin/_U_S_Sreverb_Scc_Scheckpointing_Ccheckpoint_Ucc_Uproto___Ureverb_Scc_Scheckpointing/libcheckpoint_cc_proto.so $LIB_REVERB_PATH/libcheckpoint_cc_proto.so $LIB_REVERB_PATH/cc/ops/libgen_reverb_ops_gen_op.so
++install_name_tool -change @loader_path/../../../_solib_darwin/_U_S_Sreverb_Scc_Cschema_Ucc_Uproto___Ureverb_Scc/libschema_cc_proto.so $LIB_REVERB_PATH/libschema_cc_proto.so $LIB_REVERB_PATH/cc/ops/libgen_reverb_ops_gen_op.so
+\ No newline at end of file
+diff --git a/oss_build.sh b/oss_build.sh
+index a5ab40a..d20ece5 100755
+--- a/oss_build.sh
++++ b/oss_build.sh
+@@ -26,7 +26,7 @@ set -e
+ set -o pipefail
+ 
+ # Flags
+-PYTHON_VERSIONS=3.7 # Options 3.7 (default), 3.8, or 3.9.
++PYTHON_VERSIONS=3.8 # Options 3.7 (default), 3.8, or 3.9.
+ CLEAN=false # Set to true to run bazel clean.
+ OUTPUT_DIR=/tmp/reverb/dist/
+ PYTHON_TESTS=true
+diff --git a/python_bin_path.sh b/python_bin_path.sh
+index 00df38f..091ac1c 100644
+--- a/python_bin_path.sh
++++ b/python_bin_path.sh
+@@ -1 +1 @@
+-export PYTHON_BIN_PATH="/Users/llv23/opt/miniconda3/bin/python"
+\ No newline at end of file
++export PYTHON_BIN_PATH="/Users/llv23/opt/miniconda3/bin/python3.8"
+\ No newline at end of file
+diff --git a/reverb/BUILD b/reverb/BUILD
+index d4fc285..0af451f 100644
+--- a/reverb/BUILD
++++ b/reverb/BUILD
+@@ -96,7 +96,7 @@ reverb_pybind_extension(
+     srcs = ["pybind.cc"],
+     module_name = "libpybind",
+     pytype_srcs = ["pybind.pyi"],
+-    srcs_version = "PY3ONLY",
++    srcs_version = "PY2AND3",
+     visibility = [":__subpackages__"],
+     deps = [
+         "//reverb/cc:chunker",
+diff --git a/reverb/cc/platform/default/build_rules.bzl b/reverb/cc/platform/default/build_rules.bzl
+index 42fdea1..5697a75 100644
+--- a/reverb/cc/platform/default/build_rules.bzl
++++ b/reverb/cc/platform/default/build_rules.bzl
+@@ -451,6 +451,24 @@ def reverb_pybind_extension(
+             "-fno-strict-aliasing",  # allow a wider range of code [aliasing] to compile.
+             "-fexceptions",  # pybind relies on exceptions, required to compile.
+             "-fvisibility=hidden",  # avoid pybind symbol clashes between DSOs.
++            "-shared",
++            "-fPIC",
++            # "-I/Users/llv23/opt/miniconda3/include/python3.8",
++            "-Wno-unused-result",
++            "-Wsign-compare",
++            "-Wunreachable-code",
++            "-DNDEBUG",
++            "-g",
++            "-fwrapv",
++            "-O3",
++            "-Wall",
++            "-Wstrict-prototypes",
++            # "-I/Users/llv23/opt/miniconda3/include",
++            "-arch x86_64",
++            "-L/Users/llv23/opt/miniconda3/lib/python3.8/config-3.8-darwin",
++            "-ldl",
++            "-framework CoreFoundation",
++            "-undefined dynamic_lookup",
+         ],
+         linkopts = linkopts + _rpath_linkopts(module_name) + [
+             # "-Wl,--version-script",
+@@ -536,7 +554,8 @@ def reverb_pybind_deps():
+     return [
+         "@pybind11",
+         "@tensorflow_includes//:includes",
+-        "@tensorflow_solib//:framework_lib",
++        "@python_includes//:numpy_includes",
++        # "@tensorflow_solib//:framework_lib",
+     ]
+ 
+ def reverb_tf_ops_visibility():
+diff --git a/reverb/cc/platform/default/repo.bzl b/reverb/cc/platform/default/repo.bzl
+index 9b0f8d9..54153ae 100644
+--- a/reverb/cc/platform/default/repo.bzl
++++ b/reverb/cc/platform/default/repo.bzl
+@@ -9,6 +9,7 @@ def clean_dep(dep):
+ 
+ def get_python_path(ctx):
+     path = ctx.os.environ.get("PYTHON_BIN_PATH")
++    print("Orlando: PYTHON_BIN_PATH = {}".format(path))
+     if not path:
+         fail(
+             "Could not get environment variable PYTHON_BIN_PATH.  " +
+@@ -99,6 +100,8 @@ def _find_python_solib_path(repo_ctx):
+             .format(exec_result.stderr))
+     solib_dir = exec_result.stdout.splitlines()[-1]
+     full_path = repo_ctx.path("{}/{}".format(solib_dir, basename))
++    print("Orlando: Looking for python shared library file:\n{}/{}"
++        .format(solib_dir, basename))
+     if not full_path.exists:
+         fail("Unable to find python shared library file:\n{}/{}"
+             .format(solib_dir, basename))
+@@ -226,8 +229,8 @@ def _tensorflow_solib_repo_impl(repo_ctx):
+ cc_library(
+     name = "framework_lib",
+     # srcs = ["tensorflow_solib/libtensorflow_framework.so.2"],
+-    srcs = ["tensorflow_solib/libtensorflow_framework.2.dylib"],
+-    deps = ["@python_includes", "@python_includes//:numpy_includes"],
++    srcs = ["tensorflow_solib/libtensorflow_framework.2.9.1.dylib"],
++    deps = ["@python_includes//:numpy_includes"],
+     visibility = ["//visibility:public"],
+ )
+ """,
+@@ -236,9 +239,13 @@ cc_library(
+ def _python_includes_repo_impl(repo_ctx):
+     python_include_path = _find_python_include_path(repo_ctx)
+     python_solib = _find_python_solib_path(repo_ctx)
++    print("Orlando python_include_path: {}".format(python_include_path))
++    print("Orlando python_solib: {}".format(python_solib))
+     repo_ctx.symlink(python_include_path, "python_includes")
+     numpy_include_path = _find_numpy_include_path(repo_ctx)
++    print("Orlando numpy_include_path: {}".format(numpy_include_path))
+     repo_ctx.symlink(numpy_include_path, "numpy_includes")
++    print("Orlando from :{} to :{}".format("{}/{}".format(python_solib.dir, python_solib.basename), python_solib.basename))
+     repo_ctx.symlink(
+         "{}/{}".format(python_solib.dir, python_solib.basename),
+         python_solib.basename,
+@@ -253,7 +260,7 @@ def _python_includes_repo_impl(repo_ctx):
+ cc_library(
+     name = "python_includes",
+     hdrs = glob(["python_includes/**/*.h"]),
+-    srcs = ["{}"],
++    # srcs = ["{}"],
+     includes = ["python_includes"],
+     visibility = ["//visibility:public"],
+ )
+@@ -304,11 +311,11 @@ def python_deps():
+     http_archive(
+         name = "pybind11",
+         urls = [
+-            "https://storage.googleapis.com/mirror.tensorflow.org/github.com/pybind/pybind11/archive/v2.4.3.tar.gz",
+-            "https://github.com/pybind/pybind11/archive/v2.4.3.tar.gz",
++            # "https://storage.googleapis.com/mirror.tensorflow.org/github.com/pybind/pybind11/archive/v2.4.3.tar.gz",
++            "https://github.com/pybind/pybind11/archive/refs/tags/v2.10.3.tar.gz",
+         ],
+-        sha256 = "1eed57bc6863190e35637290f97a20c81cfe4d9090ac0a24f3bbf08f265eb71d",
+-        strip_prefix = "pybind11-2.4.3",
++        sha256 = "5d8c4c5dda428d3a944ba3d2a5212cb988c2fae4670d58075a5a49075a6ca315",
++        strip_prefix = "pybind11-2.10.3",
+         build_file = clean_dep("//third_party:pybind11.BUILD"),
+     )
+ 
+@@ -326,8 +333,8 @@ def github_grpc_deps():
+     http_archive(
+         name = "com_github_grpc_grpc",
+         patch_cmds = [
+-            """sed -i.bak 's/"python",/"python3",/g' third_party/py/python_configure.bzl""",
+-            """sed -i.bak 's/PYTHONHASHSEED=0/PYTHONHASHSEED=0 python3/g' bazel/cython_library.bzl""",
++            """sed -i.bak 's/"python",/"python3.8",/g' third_party/py/python_configure.bzl""",
++            """sed -i.bak 's/PYTHONHASHSEED=0/PYTHONHASHSEED=0 python3.8/g' bazel/cython_library.bzl""",
+         ],
+         sha256 = "39bad059a712c6415b168cb3d922cb0e8c16701b475f047426c81b46577d844b",
+         strip_prefix = "grpc-reverb_fix",
+diff --git a/reverb/client.py b/reverb/client.py
+index a9c46cd..3eb4d58 100644
+--- a/reverb/client.py
++++ b/reverb/client.py
+@@ -487,7 +487,7 @@ class Client:
+ 
+     Args:
+       timeout: Timeout in seconds to wait for server response. By default no
+-        deadline is set and call will block indefinetely until server responds.
++        deadline is set and call will block indefinitely until server responds.
+ 
+     Returns:
+       A dictionary mapping table names to their associated `TableInfo`
+@@ -535,7 +535,7 @@ class Client:
+     """Constructs a new `TrajectoryWriter`.
+ 
+     Note: The chunk length is auto tuned by default. Use
+-      `TrajectoryWriter.configure` to override this behaviour.
++      `TrajectoryWriter.configure` to override this behavior.
+ 
+     See `TrajectoryWriter` for more detailed documentation about the writer
+     itself.
+diff --git a/reverb/pip_package/README.md b/reverb/pip_package/README.md
+index 5607562..9a9788c 100644
+--- a/reverb/pip_package/README.md
++++ b/reverb/pip_package/README.md
+@@ -1,3 +1,4 @@
++<!-- markdownlint-disable-file MD007 MD033 MD030 MD012 MD014 MD022 -->
+ # How to develop and build Reverb with the Docker containers
+ 
+ ## Overview
+@@ -99,7 +100,7 @@ $ docker run --rm --mount "type=bind,src=$REVERB_DIR,dst=/tmp/reverb" \
+ 1. Compile Reverb.
+ 
+   ```shell
+-  $ python3.7 configure.py
++  $ python3.8 configure.py
+   $ bazel build -c opt //reverb/pip_package:build_pip_package
+   ```
+ 
+diff --git a/reverb/pip_package/build_pip_package.sh b/reverb/pip_package/build_pip_package.sh
+index f6a1fd9..30a89c9 100755
+--- a/reverb/pip_package/build_pip_package.sh
++++ b/reverb/pip_package/build_pip_package.sh
+@@ -27,12 +27,12 @@ function build_wheel() {
+     echo $(date)  "Setting PYTHON_BIN_PATH equal to what was set with configure.py."
+     source python_bin_path.sh
+   fi
+-  PYTHON_BIN_PATH=${PYTHON_BIN_PATH:-$(which python3)}
++  PYTHON_BIN_PATH=${PYTHON_BIN_PATH:-$(which python3.8)}
+ 
+   pushd ${TMPDIR} > /dev/null
+ 
+   echo $(date) : "=== Building wheel"
+-  "${PYTHON_BIN_PATH}" setup.py bdist_wheel ${PKG_NAME_FLAG} ${RELEASE_FLAG} ${TF_VERSION_FLAG} --plat manylinux2014_x86_64 > /dev/null
++  "${PYTHON_BIN_PATH}" setup.py bdist_wheel ${PKG_NAME_FLAG} ${RELEASE_FLAG} ${TF_VERSION_FLAG} --plat macosx_10_9_x86_64 > /dev/null
+   DEST=${TMPDIR}/dist/
+   if [[ ! "$TMPDIR" -ef "$DESTDIR" ]]; then
+     mkdir -p ${DESTDIR}
+diff --git a/reverb/pybind.cc b/reverb/pybind.cc
+index b94e375..f82097f 100644
+--- a/reverb/pybind.cc
++++ b/reverb/pybind.cc
+@@ -482,7 +482,7 @@ PYBIND11_MODULE(libpybind, m) {
+       .def("Reset", &Client::Reset, py::call_guard<py::gil_scoped_release>())
+       .def("ServerInfo",
+            [](Client *client, int timeout_sec) {
+-             // Wait indefinetely for server to startup when timeout not
++             // Wait indefinitely for server to startup when timeout not
+              // provided.
+              auto timeout = timeout_sec > 0 ? absl::Seconds(timeout_sec)
+                                             : absl::InfiniteDuration();
+diff --git a/run_python_tests.sh b/run_python_tests.sh
+index 088ce6c..5a8c69a 100644
+--- a/run_python_tests.sh
++++ b/run_python_tests.sh
+@@ -20,7 +20,7 @@
+ # python to use.
+ 
+ # Usage (expects Reverb to be installed):
+-#   export PYTHON_BIN_PATH=$(which python3)
++#   export PYTHON_BIN_PATH=$(which python3.8)
+ #   bash run_python_tests.sh
+ set +x
+ 
+-- 
+2.17.2 (Apple Git-113)
+
+
+From 57008c9e9de348c17a529f76b2589a761a40af14 Mon Sep 17 00:00:00 2001
+From: Orlando Ding <xiandao.airs@gmail.com>
+Date: Sat, 25 Feb 2023 15:04:14 -0800
+Subject: [PATCH 3/3] orlando - for updates of base library
+
+---
+ README.md              |  3 ++-
+ bazel-bin              |  1 -
+ bazel-dm_reverb        |  1 -
+ bazel-out              |  1 -
+ bazel-testlogs         |  1 -
+ macOS_reverb_symbol.sh | 31 ++++++++++++++++++++-----------
+ 6 files changed, 22 insertions(+), 16 deletions(-)
+ delete mode 120000 bazel-bin
+ delete mode 120000 bazel-dm_reverb
+ delete mode 120000 bazel-out
+ delete mode 120000 bazel-testlogs
+
+diff --git a/README.md b/README.md
+index 8997f42..1d93bed 100644
+--- a/README.md
++++ b/README.md
+@@ -7,9 +7,10 @@ This repository is forked by Orlando, Ding in order to make dm_verb available on
+ 
+ Several key implementations to fix the issues on macOS 10.13.6:
+ 
++* remove unnecessary apple_common.objc_proto_aspect in "/private/var/tmp/_bazel_llv23/0d2f910c738b958840a7c3ed78462485/external/build_bazel_rules_apple/apple/internal/rule_factory.bzl"
+ * python3.8 environment preparation to avoid entangling with the system default python (3.7 in framework)
+ * [reverb/cc/platform/default/build_rules.bzl](reverb/cc/platform/default/build_rules.bzl), remove the reliance with libpython3.8.dylib that will lead to circular dependency during runtime and the ensuring core dump
+-* correct the dynamic link between libraries. Regarding manual solution via install_name_tool, refer to [macOS_reverb_symbol.sh](macOS_reverb_symbol.sh)
++* correct the dynamic link between libraries. Regarding manual solution via install_name_tool, refer to [macOS_reverb_symbol.sh](macOS_reverb_symbol.sh) and [change explicit path to @executable_path](https://itwenty.me/2020/07/understanding-dyld-executable_path-loader_path-and-rpath/)
+ 
+ The building process as follow:
+ 
+diff --git a/bazel-bin b/bazel-bin
+deleted file mode 120000
+index edd341c..0000000
+--- a/bazel-bin
++++ /dev/null
+@@ -1 +0,0 @@
+-/private/var/tmp/_bazel_llv23/0d2f910c738b958840a7c3ed78462485/execroot/reverb/bazel-out/darwin-opt/bin
+\ No newline at end of file
+diff --git a/bazel-dm_reverb b/bazel-dm_reverb
+deleted file mode 120000
+index 4b9ec39..0000000
+--- a/bazel-dm_reverb
++++ /dev/null
+@@ -1 +0,0 @@
+-/private/var/tmp/_bazel_llv23/0d2f910c738b958840a7c3ed78462485/execroot/reverb
+\ No newline at end of file
+diff --git a/bazel-out b/bazel-out
+deleted file mode 120000
+index 7c3b739..0000000
+--- a/bazel-out
++++ /dev/null
+@@ -1 +0,0 @@
+-/private/var/tmp/_bazel_llv23/0d2f910c738b958840a7c3ed78462485/execroot/reverb/bazel-out
+\ No newline at end of file
+diff --git a/bazel-testlogs b/bazel-testlogs
+deleted file mode 120000
+index def1061..0000000
+--- a/bazel-testlogs
++++ /dev/null
+@@ -1 +0,0 @@
+-/private/var/tmp/_bazel_llv23/0d2f910c738b958840a7c3ed78462485/execroot/reverb/bazel-out/darwin-opt/testlogs
+\ No newline at end of file
+diff --git a/macOS_reverb_symbol.sh b/macOS_reverb_symbol.sh
+index 3d9646a..1351509 100644
+--- a/macOS_reverb_symbol.sh
++++ b/macOS_reverb_symbol.sh
+@@ -1,16 +1,25 @@
+-export LIB_REVERB_PATH=/Users/llv23/opt/miniconda3/lib/python3.8/site-packages/reverb
++#!/bin/bash
++##
++# this script is used to fix the symbol link error on macOS, changing explicit link symbol path during building time to runtime path.
++# Orlando, 2023-02-24
++##
++
++export LIB_REVERB_PATH=~/opt/miniconda3/lib/python3.8/site-packages/reverb
++
+ # otool -L $LIB_REVERB_PATH/libpybind.so
+-install_name_tool -change @loader_path/../_solib_darwin/_U_S_Sreverb_Scc_Cpatterns_Ucc_Uproto___Ureverb_Scc/libpatterns_cc_proto.so $LIB_REVERB_PATH/libpatterns_cc_proto.so $LIB_REVERB_PATH/libpybind.so
+-install_name_tool -change @loader_path/../_solib_darwin/_U_S_Sreverb_Scc_Creverb_Uservice_Ucc_Uproto___Ureverb_Scc/libreverb_service_cc_proto.so $LIB_REVERB_PATH/libreverb_service_cc_proto.so $LIB_REVERB_PATH/libpybind.so
+-install_name_tool -change @loader_path/../_solib_darwin/_U_S_Sreverb_Scc_Scheckpointing_Ccheckpoint_Ucc_Uproto___Ureverb_Scc_Scheckpointing/libcheckpoint_cc_proto.so $LIB_REVERB_PATH/libcheckpoint_cc_proto.so $LIB_REVERB_PATH/libpybind.so
+-install_name_tool -change @loader_path/../_solib_darwin/_U_S_Sreverb_Scc_Cschema_Ucc_Uproto___Ureverb_Scc/libschema_cc_proto.so $LIB_REVERB_PATH/libschema_cc_proto.so $LIB_REVERB_PATH/libpybind.so
++install_name_tool -change @loader_path/../_solib_darwin/_U_S_Sreverb_Scc_Cpatterns_Ucc_Uproto___Ureverb_Scc/libpatterns_cc_proto.so @executable_path/libpatterns_cc_proto.so $LIB_REVERB_PATH/libpybind.so
++install_name_tool -change @loader_path/../_solib_darwin/_U_S_Sreverb_Scc_Creverb_Uservice_Ucc_Uproto___Ureverb_Scc/libreverb_service_cc_proto.so @executable_path/libreverb_service_cc_proto.so $LIB_REVERB_PATH/libpybind.so
++install_name_tool -change @loader_path/../_solib_darwin/_U_S_Sreverb_Scc_Scheckpointing_Ccheckpoint_Ucc_Uproto___Ureverb_Scc_Scheckpointing/libcheckpoint_cc_proto.so @executable_path/libcheckpoint_cc_proto.so $LIB_REVERB_PATH/libpybind.so
++install_name_tool -change @loader_path/../_solib_darwin/_U_S_Sreverb_Scc_Cschema_Ucc_Uproto___Ureverb_Scc/libschema_cc_proto.so @executable_path/libschema_cc_proto.so $LIB_REVERB_PATH/libpybind.so
++
+ # otool -L $LIB_REVERB_PATH/libreverb_service_cc_proto.so
+-install_name_tool -change @loader_path/../../_solib_darwin/_U_S_Sreverb_Scc_Cschema_Ucc_Uproto___Ureverb_Scc/libschema_cc_proto.so $LIB_REVERB_PATH/libschema_cc_proto.so $LIB_REVERB_PATH/libreverb_service_cc_proto.so
++install_name_tool -change @loader_path/../../_solib_darwin/_U_S_Sreverb_Scc_Cschema_Ucc_Uproto___Ureverb_Scc/libschema_cc_proto.so @executable_path/libschema_cc_proto.so $LIB_REVERB_PATH/libreverb_service_cc_proto.so
++
+ # otool -L $LIB_REVERB_PATH/libcheckpoint_cc_proto.so
+-install_name_tool -change @loader_path/../../../_solib_darwin/_U_S_Sreverb_Scc_Cschema_Ucc_Uproto___Ureverb_Scc/libschema_cc_proto.so $LIB_REVERB_PATH/libschema_cc_proto.so $LIB_REVERB_PATH/libcheckpoint_cc_proto.so
++install_name_tool -change @loader_path/../../../_solib_darwin/_U_S_Sreverb_Scc_Cschema_Ucc_Uproto___Ureverb_Scc/libschema_cc_proto.so @executable_path/libschema_cc_proto.so $LIB_REVERB_PATH/libcheckpoint_cc_proto.so
+ 
+ # otool -L $LIB_REVERB_PATH/cc/ops/libgen_reverb_ops_gen_op.so
+-install_name_tool -change @loader_path/../../../_solib_darwin/_U_S_Sreverb_Scc_Cpatterns_Ucc_Uproto___Ureverb_Scc/libpatterns_cc_proto.so $LIB_REVERB_PATH/libpatterns_cc_proto.so $LIB_REVERB_PATH/cc/ops/libgen_reverb_ops_gen_op.so
+-install_name_tool -change @loader_path/../../../_solib_darwin/_U_S_Sreverb_Scc_Creverb_Uservice_Ucc_Uproto___Ureverb_Scc/libreverb_service_cc_proto.so $LIB_REVERB_PATH/libreverb_service_cc_proto.so $LIB_REVERB_PATH/cc/ops/libgen_reverb_ops_gen_op.so
+-install_name_tool -change @loader_path/../../../_solib_darwin/_U_S_Sreverb_Scc_Scheckpointing_Ccheckpoint_Ucc_Uproto___Ureverb_Scc_Scheckpointing/libcheckpoint_cc_proto.so $LIB_REVERB_PATH/libcheckpoint_cc_proto.so $LIB_REVERB_PATH/cc/ops/libgen_reverb_ops_gen_op.so
+-install_name_tool -change @loader_path/../../../_solib_darwin/_U_S_Sreverb_Scc_Cschema_Ucc_Uproto___Ureverb_Scc/libschema_cc_proto.so $LIB_REVERB_PATH/libschema_cc_proto.so $LIB_REVERB_PATH/cc/ops/libgen_reverb_ops_gen_op.so
+\ No newline at end of file
++install_name_tool -change @loader_path/../../../_solib_darwin/_U_S_Sreverb_Scc_Cpatterns_Ucc_Uproto___Ureverb_Scc/libpatterns_cc_proto.so @executable_path/libpatterns_cc_proto.so $LIB_REVERB_PATH/cc/ops/libgen_reverb_ops_gen_op.so
++install_name_tool -change @loader_path/../../../_solib_darwin/_U_S_Sreverb_Scc_Creverb_Uservice_Ucc_Uproto___Ureverb_Scc/libreverb_service_cc_proto.so @executable_path/libreverb_service_cc_proto.so $LIB_REVERB_PATH/cc/ops/libgen_reverb_ops_gen_op.so
++install_name_tool -change @loader_path/../../../_solib_darwin/_U_S_Sreverb_Scc_Scheckpointing_Ccheckpoint_Ucc_Uproto___Ureverb_Scc_Scheckpointing/libcheckpoint_cc_proto.so @executable_path/libcheckpoint_cc_proto.so $LIB_REVERB_PATH/cc/ops/libgen_reverb_ops_gen_op.so
++install_name_tool -change @loader_path/../../../_solib_darwin/_U_S_Sreverb_Scc_Cschema_Ucc_Uproto___Ureverb_Scc/libschema_cc_proto.so @executable_path/libschema_cc_proto.so $LIB_REVERB_PATH/cc/ops/libgen_reverb_ops_gen_op.so
+\ No newline at end of file
+-- 
+2.17.2 (Apple Git-113)
+
