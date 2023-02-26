@@ -10,9 +10,23 @@ Several key implementations to fix the issues on macOS 10.13.6:
 * remove unnecessary apple_common.objc_proto_aspect in "/private/var/tmp/_bazel_llv23/0d2f910c738b958840a7c3ed78462485/external/build_bazel_rules_apple/apple/internal/rule_factory.bzl"
 * python3.8 environment preparation to avoid entangling with the system default python (3.7 in framework)
 * [reverb/cc/platform/default/build_rules.bzl](reverb/cc/platform/default/build_rules.bzl), remove the reliance with libpython3.8.dylib that will lead to circular dependency during runtime and the ensuring core dump
-* correct the dynamic link between libraries. Regarding manual solution via install_name_tool, refer to [macOS_reverb_symbol.sh](macOS_reverb_symbol.sh) and [change explicit path to @executable_path](https://itwenty.me/2020/07/understanding-dyld-executable_path-loader_path-and-rpath/)
+* correct the dynamic link between libraries. Regarding manual solution via install_name_tool, refer to [macOS_reverb_symbol.sh](macOS_reverb_symbol.sh) and [change explicit path to @rpath](https://itwenty.me/2020/07/understanding-dyld-executable_path-loader_path-and-rpath/) (You need to add TF_HOME, REVERB_HOME into your LD_LIBRARY_PATH so that they are able to be loaded when running reverb)
+
+Status:
+
+* run all tests under reverb/*_test.py
+
+```bash
+export PYTHON_BIN_PATH=$(which python3.8)
+sh ~/Documents/05_machine_learning/04_phd/4_flow_action/dm_reverb/run_python_tests.sh
+```
 
 The building process as follow:
+
+* passed: structured_writer_test.py, timestep_dataset_eager_test.py, pybind_test.py, timestep_dataset_test.py, trajectory_writer_test.py, rate_limiters_test.py, client_test.py
+* failed: trajectory_dataset_test.py, trajectory_dataset_eager_test.py, trajectory_dataset_eager_test.py
+
+The reason of failure may be caused by "failed call to cuInit: UNKNOWN ERROR (3)", as missing eGPU nvidia plugged in. Need further investigation
 
 1. Compilation
 

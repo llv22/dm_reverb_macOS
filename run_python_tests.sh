@@ -29,7 +29,7 @@ py_test() {
 
   echo "===========Running Python tests============"
 
-  for test_file in `find reverb/ -name '*_test.py' -print`
+  for test_file in `find $1/reverb/ -name '*_test.py' -print`
   do
     echo "####=======Testing ${test_file}=======####"
     ${PYTHON_BIN_PATH} "${test_file}"
@@ -43,4 +43,14 @@ py_test() {
   return "${exit_code}"
 }
 
-py_test
+if [[ -z "${PYTHON_BIN_PATH}" ]]; then
+  echo "PYTHON_BIN_PATH is not set."
+  exit 1
+fi
+
+if [[ "$#" -ne 1 ]]; then
+  echo "Usage: run_python_tests.sh <path of test>"
+  exit 1
+fi
+
+py_test "$1"
